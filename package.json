@@ -10,10 +10,6 @@
     "Other"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onCommand:extension.createReactComponent",
-    "onCommand:extension.renameReactComponent"
-  ],
   "contributes": {
     "commands": [
       {
