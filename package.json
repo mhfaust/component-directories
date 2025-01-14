@@ -24,17 +24,28 @@
     "menus": {
       "explorer/context": [
         {
-          "when": "explorerResourceIsFolder==true",
-          "command": "extension.createReactComponent",
-          "group": "navigation"
-        },
-        {
-          "when": "explorerResourceIsFolder",
-          "command": "extension.renameReactComponent",
+          "submenu": "component.actions",
           "group": "navigation"
         }
+      ],
+      "component.actions": [
+        {
+          "command": "extension.createReactComponent",
+          "group": "1_create"
+        },
+        {
+          "command": "extension.renameReactComponent",
+          "group": "2_modify"
+        }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "component.actions",
+        "label": "Component",
+        "icon": "$(symbol-class)"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
