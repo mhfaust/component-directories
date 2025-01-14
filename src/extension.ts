@@ -103,32 +103,56 @@ async function renameComponent({ oldName, newName, directory }: RenameOptions) {
 }
 
 async function updateImportReferences(oldName: string, newName: string) {
-  // Create a workspace edit
   const workspaceEdit = new vscode.WorkspaceEdit();
 
-  // Find all TypeScript/TSX files in the workspace
   const files = await vscode.workspace.findFiles('**/*.{ts,tsx}', '**/node_modules/**');
 
   for (const file of files) {
     const document = await vscode.workspace.openTextDocument(file);
     const text = document.getText();
 
-    // Look for imports of the old component name
-    const importRegex = new RegExp(`from ['"](.*/${oldName})['"]`, 'g');
+    // Match the import declaration
+    const importRegex = new RegExp(
+      `import\\s+(${oldName})\\s+from\\s+['"](.*/${oldName})['"]`,
+      'g',
+    );
 
     let match;
     while ((match = importRegex.exec(text)) !== null) {
-      const importPath = match[1];
+      const importName = match[1];
+      const importPath = match[2];
       const newImportPath = importPath.replace(oldName, newName);
 
+      // First, update the import path
       const startPos = document.positionAt(match.index);
       const endPos = document.positionAt(match.index + match[0].length);
 
-      workspaceEdit.replace(file, new vscode.Range(startPos, endPos), `from '${newImportPath}'`);
+      workspaceEdit.replace(
+        file,
+        new vscode.Range(startPos, endPos),
+        `import ${oldName} from '${newImportPath}'`, // Keep old name temporarily
+      );
+
+      // Then trigger a symbol rename for the imported variable
+      const importPos = document.positionAt(match.index + 'import '.length);
+      const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+        'vscode.executeDocumentRenameProvider',
+        document.uri,
+        importPos,
+        newName,
+      );
+
+      if (edit) {
+        // Merge the symbol rename changes into our workspace edit
+        for (const [uri, edits] of edit.entries()) {
+          edits.forEach((edit) => {
+            workspaceEdit.replace(uri, edit.range, edit.newText);
+          });
+        }
+      }
     }
   }
 
-  // Apply all the changes
   await vscode.workspace.applyEdit(workspaceEdit);
 }
 
