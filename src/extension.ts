@@ -11,17 +11,30 @@ interface TemplateConfig {
   }[];
 }
 
-async function loadConfig(workspaceRoot: string): Promise<TemplateConfig | null> {
-  try {
-    const configPath = path.join(workspaceRoot, '.component-templates.json');
-    const configContent = await fs.readFile(configPath, 'utf-8');
-    return JSON.parse(configContent);
-  } catch (error) {
-    vscode.window.showErrorMessage(
-      'Could not load component templates configuration. Please ensure .component-templates.json exists in your workspace root.',
-    );
-    return null;
+async function findConfig(
+  startPath: string,
+): Promise<{ config: TemplateConfig; configDir: string } | null> {
+  let currentPath = startPath;
+
+  //Search the current path, upward, to find a template-config.
+  while (currentPath !== path.dirname(currentPath)) {
+    try {
+      const configPath = path.join(currentPath, '.component-templates.json');
+      const configContent = await fs.readFile(configPath, 'utf-8');
+      return {
+        config: JSON.parse(configContent),
+        configDir: currentPath, // We'll need this to resolve relative template paths
+      };
+    } catch (error) {
+      // No config found at this level, move up one directory
+      currentPath = path.dirname(currentPath);
+    }
   }
+
+  vscode.window.showErrorMessage(
+    'No .component-templates.json found in this directory or any parent directories.',
+  );
+  return null;
 }
 
 async function generateComponent(
@@ -66,26 +79,17 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-      if (!workspaceRoot) {
-        vscode.window.showErrorMessage('No workspace folder found.');
+      const configResult = await findConfig(uri.fsPath);
+      if (!configResult) {
         return;
       }
 
-      const config = await loadConfig(workspaceRoot);
-      if (!config) {
-        return;
-      }
+      const { config, configDir } = configResult;
 
+      // Now when we process templates, use configDir instead of workspaceRoot
       const componentName = await vscode.window.showInputBox({
         prompt: 'Component name in PascalCase',
         placeHolder: 'e.g. MyComponent',
-        validateInput: (value) => {
-          if (!/^[A-Z][A-Za-z0-9]*$/.test(value)) {
-            return 'Component name must be in PascalCase';
-          }
-          return null;
-        },
       });
 
       if (!componentName) {
@@ -93,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       try {
-        await generateComponent(componentName, uri.fsPath, config, workspaceRoot);
+        await generateComponent(componentName, uri.fsPath, config, configDir);
         vscode.window.showInformationMessage(`Component ${componentName} created successfully!`);
       } catch (error) {
         vscode.window.showErrorMessage(
