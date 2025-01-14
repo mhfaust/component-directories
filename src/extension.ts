@@ -111,43 +111,51 @@ async function updateImportReferences(oldName: string, newName: string) {
     const document = await vscode.workspace.openTextDocument(file);
     const text = document.getText();
 
-    // Match the import declaration
-    const importRegex = new RegExp(
+    // Match both default and named imports
+    const importPatterns = [
+      // Default import: import OldName from './OldName'
       `import\\s+(${oldName})\\s+from\\s+['"](.*/${oldName})['"]`,
-      'g',
-    );
+      // Named import: import { OldName } from './OldName'
+      `import\\s+{[^}]*\\b(${oldName})\\b[^}]*}\\s+from\\s+['"](.*/${oldName})['"]`,
+    ];
 
-    let match;
-    while ((match = importRegex.exec(text)) !== null) {
-      const importName = match[1];
-      const importPath = match[2];
-      const newImportPath = importPath.replace(oldName, newName);
+    for (const pattern of importPatterns) {
+      const importRegex = new RegExp(pattern, 'g');
 
-      // First, update the import path
-      const startPos = document.positionAt(match.index);
-      const endPos = document.positionAt(match.index + match[0].length);
+      let match;
+      while ((match = importRegex.exec(text)) !== null) {
+        const importName = match[1]; // The imported variable name
+        const importPath = match[2]; // The path
+        const newImportPath = importPath.replace(oldName, newName);
 
-      workspaceEdit.replace(
-        file,
-        new vscode.Range(startPos, endPos),
-        `import ${oldName} from '${newImportPath}'`, // Keep old name temporarily
-      );
+        // First update the import path
+        const startPos = document.positionAt(match.index);
+        const endPos = document.positionAt(match.index + match[0].length);
 
-      // Then trigger a symbol rename for the imported variable
-      const importPos = document.positionAt(match.index + 'import '.length);
-      const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
-        'vscode.executeDocumentRenameProvider',
-        document.uri,
-        importPos,
-        newName,
-      );
+        // Keep the original import name temporarily
+        const originalImportStatement = text
+          .substring(match.index, match.index + match[0].length)
+          .replace(importPath, newImportPath);
 
-      if (edit) {
-        // Merge the symbol rename changes into our workspace edit
-        for (const [uri, edits] of edit.entries()) {
-          edits.forEach((edit) => {
-            workspaceEdit.replace(uri, edit.range, edit.newText);
-          });
+        workspaceEdit.replace(file, new vscode.Range(startPos, endPos), originalImportStatement);
+
+        // Find the position of the symbol to rename
+        const symbolPos = document.positionAt(match.index + match[0].indexOf(importName));
+
+        // Then trigger a symbol rename
+        const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+          'vscode.executeDocumentRenameProvider',
+          document.uri,
+          symbolPos,
+          newName,
+        );
+
+        if (edit) {
+          for (const [uri, edits] of edit.entries()) {
+            edits.forEach((edit) => {
+              workspaceEdit.replace(uri, edit.range, edit.newText);
+            });
+          }
         }
       }
     }
