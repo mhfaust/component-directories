@@ -70,8 +70,70 @@ async function generateComponent(
   }
 }
 
+interface RenameOptions {
+  oldName: string;
+  newName: string;
+  directory: vscode.Uri;
+}
+
+async function renameComponent({ oldName, newName, directory }: RenameOptions) {
+  const oldPath = path.join(directory.fsPath, oldName);
+  const newPath = path.join(directory.fsPath, newName);
+
+  // 1. Rename the directory
+  await fs.rename(oldPath, newPath);
+
+  // 2. Rename files within the directory
+  const files = await fs.readdir(newPath);
+  for (const file of files) {
+    const oldFilePath = path.join(newPath, file);
+    const newFileName = file.replace(oldName, newName);
+    const newFilePath = path.join(newPath, newFileName);
+    await fs.rename(oldFilePath, newFilePath);
+  }
+
+  // 3. Update file contents
+  const newFiles = await fs.readdir(newPath);
+  for (const file of newFiles) {
+    const filePath = path.join(newPath, file);
+    const content = await fs.readFile(filePath, 'utf-8');
+    const updatedContent = content.replaceAll(oldName, newName);
+    await fs.writeFile(filePath, updatedContent);
+  }
+}
+
+async function updateImportReferences(oldName: string, newName: string) {
+  // Create a workspace edit
+  const workspaceEdit = new vscode.WorkspaceEdit();
+
+  // Find all TypeScript/TSX files in the workspace
+  const files = await vscode.workspace.findFiles('**/*.{ts,tsx}', '**/node_modules/**');
+
+  for (const file of files) {
+    const document = await vscode.workspace.openTextDocument(file);
+    const text = document.getText();
+
+    // Look for imports of the old component name
+    const importRegex = new RegExp(`from ['"](.*/${oldName})['"]`, 'g');
+
+    let match;
+    while ((match = importRegex.exec(text)) !== null) {
+      const importPath = match[1];
+      const newImportPath = importPath.replace(oldName, newName);
+
+      const startPos = document.positionAt(match.index);
+      const endPos = document.positionAt(match.index + match[0].length);
+
+      workspaceEdit.replace(file, new vscode.Range(startPos, endPos), `from '${newImportPath}'`);
+    }
+  }
+
+  // Apply all the changes
+  await vscode.workspace.applyEdit(workspaceEdit);
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  let createDisposable = vscode.commands.registerCommand(
     'extension.createReactComponent',
     async (uri: vscode.Uri) => {
       if (!uri || !uri.fsPath) {
@@ -107,5 +169,52 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(createDisposable);
+
+  let renameDisposable = vscode.commands.registerCommand(
+    'extension.renameReactComponent',
+    async (uri: vscode.Uri) => {
+      if (!uri || !uri.fsPath) {
+        vscode.window.showErrorMessage('Please right-click a component directory to rename it.');
+        return;
+      }
+
+      const currentName = path.basename(uri.fsPath);
+      const newName = await vscode.window.showInputBox({
+        prompt: 'New component name in PascalCase',
+        placeHolder: 'e.g. NewComponentName',
+        value: currentName,
+        validateInput: (value) => {
+          if (!/^[A-Z][A-Za-z0-9]*$/.test(value)) {
+            return 'Component name must be in PascalCase';
+          }
+          return null;
+        },
+      });
+
+      if (!newName || newName === currentName) {
+        return;
+      }
+
+      try {
+        await renameComponent({
+          oldName: currentName,
+          newName,
+          directory: vscode.Uri.file(path.dirname(uri.fsPath)),
+        });
+
+        await updateImportReferences(currentName, newName);
+
+        vscode.window.showInformationMessage(
+          `Successfully renamed component from ${currentName} to ${newName}`,
+        );
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Error renaming component: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    },
+  );
+
+  context.subscriptions.push(renameDisposable);
 }
