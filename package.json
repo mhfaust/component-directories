@@ -13,7 +13,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.createFullComponent",
+        "command": "extension.createDefault",
         "title": "Create (Full)"
       },
       {
@@ -21,7 +21,7 @@
         "title": "Create (Choose Type)..."
       },
       {
-        "command": "extension.renameReactComponent",
+        "command": "extension.renameComponent",
         "title": "Rename"
       },
       {
@@ -38,7 +38,7 @@
       ],
       "component.actions": [
         {
-          "command": "extension.createFullComponent",
+          "command": "extension.createDefault",
           "group": "1_create@1"
         },
         {
@@ -46,7 +46,7 @@
           "group": "1_create@2"
         },
         {
-          "command": "extension.renameReactComponent",
+          "command": "extension.renameComponent",
           "group": "2_modify@1"
         },
         {
