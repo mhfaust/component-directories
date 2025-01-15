@@ -20,6 +20,10 @@ interface TemplateGroup {
   templates: TemplateItem[];
 }
 
+interface QuickPickTemplateItem extends vscode.QuickPickItem {
+  template: TemplateItem;
+}
+
 async function findConfig(
   startPath: string,
 ): Promise<{ config: TemplateConfig; configDir: string } | null> {
@@ -259,6 +263,109 @@ let createAltComponentDisposable = vscode.commands.registerCommand(
   createAltComponent,
 );
 
+async function addComponentFiles(uri: vscode.Uri) {
+  if (!uri || !uri.fsPath) {
+    vscode.window.showErrorMessage('Please right-click a directory to add component files.');
+    return;
+  }
+
+  const configResult = await findConfig(uri.fsPath);
+  if (!configResult) {
+    return;
+  }
+
+  const { config, configDir } = configResult;
+
+  // Create QuickPick items array combining all templates
+  const quickPickItems: (QuickPickTemplateItem | vscode.QuickPickItem)[] = [];
+
+  // Add main templates section
+  if (config.mainTemplates.length > 0) {
+    quickPickItems.push({
+      label: 'Main Templates',
+      kind: vscode.QuickPickItemKind.Separator,
+    });
+
+    quickPickItems.push(
+      ...config.mainTemplates.map((template) => ({
+        label: template.label,
+        template: template,
+        description: path.basename(template.target),
+      })),
+    );
+  }
+
+  // Add alternate template groups
+  if (config.alternateTemplateGroups) {
+    for (const group of config.alternateTemplateGroups) {
+      quickPickItems.push({
+        label: group.label,
+        kind: vscode.QuickPickItemKind.Separator,
+      });
+
+      quickPickItems.push(
+        ...group.templates.map((template) => ({
+          label: template.label,
+          template: template,
+          description: path.basename(template.target),
+        })),
+      );
+    }
+  }
+
+  if (quickPickItems.length === 0) {
+    vscode.window.showErrorMessage('No templates found in configuration.');
+    return;
+  }
+
+  // Show multi-select QuickPick to user
+  const selectedItems = await vscode.window.showQuickPick(quickPickItems, {
+    placeHolder: 'Select files to add...',
+    title: 'Add Component Files',
+    canPickMany: true,
+  });
+
+  if (!selectedItems || selectedItems.length === 0) {
+    return; // User cancelled or selected nothing
+  }
+
+  // Filter out any separator items and get just the templates
+  const selectedTemplates = selectedItems
+    .filter(
+      (item): item is QuickPickTemplateItem =>
+        !('kind' in item) || item.kind !== vscode.QuickPickItemKind.Separator,
+    )
+    .map((item) => item.template);
+
+  const templatesPath = path.join(configDir, config.templatesDir);
+
+  // Get component name from the directory name
+  const componentName = path.basename(uri.fsPath);
+
+  try {
+    await generateFromTemplates(
+      componentName,
+      path.dirname(uri.fsPath), // Use parent directory since we're already in component dir
+      selectedTemplates,
+      templatesPath,
+      config.replacements,
+    );
+    vscode.window.showInformationMessage(
+      `Successfully added ${selectedTemplates.length} file${selectedTemplates.length === 1 ? '' : 's'} to ${componentName}!`,
+    );
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Error adding files: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+// Add to activate function:
+let addFilesDisposable = vscode.commands.registerCommand(
+  'extension.addComponentFiles',
+  addComponentFiles,
+);
+
 export function activate(context: vscode.ExtensionContext) {
   let createDisposable = vscode.commands.registerCommand(
     'extension.createFullComponent',
@@ -350,4 +457,5 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(createDisposable);
   context.subscriptions.push(renameDisposable);
   context.subscriptions.push(createAltComponentDisposable);
+  context.subscriptions.push(addFilesDisposable);
 }
