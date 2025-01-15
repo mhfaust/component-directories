@@ -4,6 +4,7 @@ import * as path from 'path';
 
 interface TemplateConfig {
   templatesDir: string;
+  componentNamePattern: string;
   replacements: { [key: string]: string };
   mainTemplates: TemplateItem[];
   alternateTemplateGroups?: TemplateGroup[];
@@ -34,6 +35,14 @@ function validateConfig(config: any): config is TemplateConfig {
   if (!config.templatesDir || typeof config.templatesDir !== 'string') {
     throw new Error('Missing or invalid templatesDir configuration');
   }
+  if (!config.componentNamePattern || typeof config.componentNamePattern !== 'string') {
+    throw new Error('Missing or invalid componentNamePattern configuration');
+  }
+  try {
+    new RegExp(config.componentNamePattern);
+  } catch (e) {
+    throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
+  }
   if (!config.replacements || typeof config.replacements !== 'object') {
     throw new Error('Missing or invalid replacements configuration');
   }
@@ -41,6 +50,13 @@ function validateConfig(config: any): config is TemplateConfig {
     throw new Error('Missing or invalid mainTemplates configuration');
   }
   return true;
+}
+
+function validateComponentName(name: string, pattern: string): string | null {
+  if (!new RegExp(pattern).test(name)) {
+    return `Component name must match pattern: ${pattern}`;
+  }
+  return null;
 }
 
 async function validateTemplates(config: TemplateConfig, templatesPath: string): Promise<string[]> {
@@ -381,12 +397,7 @@ async function createAltComponent(uri: vscode.Uri) {
   const componentName = await vscode.window.showInputBox({
     prompt: 'Component name in PascalCase',
     placeHolder: 'e.g. MyComponent',
-    validateInput: (value) => {
-      if (!/^[A-Z][A-Za-z0-9]*$/.test(value)) {
-        return 'Component name must be in PascalCase';
-      }
-      return null;
-    },
+    validateInput: (value) => validateComponentName(value, config.componentNamePattern),
   });
 
   if (!componentName) {
@@ -430,6 +441,15 @@ async function addComponentFiles(uri: vscode.Uri) {
   }
 
   const { config, configDir } = configResult;
+
+  const componentName = path.basename(uri.fsPath);
+  const validationError = validateComponentName(componentName, config.componentNamePattern);
+  if (validationError) {
+    vscode.window.showErrorMessage(
+      `Invalid component directory name: ${componentName}. ${validationError}`,
+    );
+    return;
+  }
 
   // Create QuickPick items array combining all templates
   const quickPickItems: (QuickPickTemplateItem | vscode.QuickPickItem)[] = [];
@@ -494,9 +514,6 @@ async function addComponentFiles(uri: vscode.Uri) {
 
   const templatesPath = path.join(configDir, config.templatesDir);
 
-  // Get component name from the directory name
-  const componentName = path.basename(uri.fsPath);
-
   try {
     const result = await generateFromTemplates(
       componentName,
@@ -552,13 +569,13 @@ export function activate(context: vscode.ExtensionContext) {
       if (!configResult) {
         return;
       }
-
       const { config, configDir } = configResult;
       const templatesPath = path.join(configDir, config.templatesDir);
 
       const componentName = await vscode.window.showInputBox({
         prompt: 'Component name in PascalCase',
         placeHolder: 'e.g. MyComponent',
+        validateInput: (value) => validateComponentName(value, config.componentNamePattern),
       });
 
       if (!componentName) {
@@ -590,17 +607,18 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
+      const configResult = await findConfig(uri.fsPath);
+      if (!configResult) {
+        return;
+      }
+      const { config } = configResult;
+
       const currentName = path.basename(uri.fsPath);
       const newName = await vscode.window.showInputBox({
         prompt: 'New component name in PascalCase',
         placeHolder: 'e.g. NewComponentName',
         value: currentName,
-        validateInput: (value) => {
-          if (!/^[A-Z][A-Za-z0-9]*$/.test(value)) {
-            return 'Component name must be in PascalCase';
-          }
-          return null;
-        },
+        validateInput: (value) => validateComponentName(value, config.componentNamePattern),
       });
 
       if (!newName || newName === currentName) {
