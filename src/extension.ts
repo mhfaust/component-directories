@@ -24,6 +24,12 @@ interface QuickPickTemplateItem extends vscode.QuickPickItem {
   template: TemplateItem;
 }
 
+interface GenerationResult {
+  success: boolean;
+  existingFiles: string[];
+  addedFiles: string[];
+}
+
 async function findConfig(
   startPath: string,
 ): Promise<{ config: TemplateConfig; configDir: string } | null> {
@@ -56,41 +62,64 @@ async function generateSingleFile(
   template: TemplateItem,
   templatesPath: string,
   replacements: { [key: string]: string },
-): Promise<void> {
-  // Read template file
-  const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
-
-  // Replace all tokens in content
-  let processedContent = templateContent;
-  for (const [token, replacement] of Object.entries(replacements)) {
-    processedContent = processedContent.replaceAll(
-      token,
-      replacement === 'componentName' ? componentName : replacement,
-    );
-  }
-
-  // Process target path
+): Promise<{ success: boolean; path: string; exists: boolean }> {
+  // Process target path first to check existence
   const processedTarget = template.target.replaceAll('${componentName}', componentName);
   const targetPath = path.join(targetDir, processedTarget);
 
-  // Ensure directory exists
-  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  // Check if file already exists
+  try {
+    await fs.access(targetPath);
+    return { success: false, path: processedTarget, exists: true };
+  } catch {
+    // File doesn't exist, proceed with generation
+  }
 
-  // Write file
-  await fs.writeFile(targetPath, processedContent);
+  try {
+    // Read template file
+    const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
+
+    // Replace all tokens in content
+    let processedContent = templateContent;
+    for (const [token, replacement] of Object.entries(replacements)) {
+      processedContent = processedContent.replaceAll(
+        token,
+        replacement === 'componentName' ? componentName : replacement,
+      );
+    }
+
+    // Ensure directory exists
+    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+
+    // Write file
+    await fs.writeFile(targetPath, processedContent);
+    return { success: true, path: processedTarget, exists: false };
+  } catch (error) {
+    return { success: false, path: processedTarget, exists: false };
+  }
 }
 
-// New function to generate files from a template group
 async function generateFromTemplates(
   componentName: string,
   targetDir: string,
   templates: TemplateItem[],
   templatesPath: string,
   replacements: { [key: string]: string },
-): Promise<void> {
-  for (const template of templates) {
-    await generateSingleFile(componentName, targetDir, template, templatesPath, replacements);
-  }
+): Promise<GenerationResult> {
+  const results = await Promise.all(
+    templates.map((template) =>
+      generateSingleFile(componentName, targetDir, template, templatesPath, replacements),
+    ),
+  );
+  const existingFiles = results.filter((r) => r.exists).map((r) => r.path);
+  const addedFiles = results.filter((r) => r.success).map((r) => r.path);
+  const anySuccess = results.some((r) => r.success);
+
+  return {
+    success: anySuccess,
+    existingFiles,
+    addedFiles,
+  };
 }
 
 interface RenameOptions {
@@ -343,16 +372,34 @@ async function addComponentFiles(uri: vscode.Uri) {
   const componentName = path.basename(uri.fsPath);
 
   try {
-    await generateFromTemplates(
+    const result = await generateFromTemplates(
       componentName,
-      path.dirname(uri.fsPath), // Use parent directory since we're already in component dir
+      path.dirname(uri.fsPath),
       selectedTemplates,
       templatesPath,
       config.replacements,
     );
-    vscode.window.showInformationMessage(
-      `Successfully added ${selectedTemplates.length} file${selectedTemplates.length === 1 ? '' : 's'} to ${componentName}!`,
-    );
+
+    if (result.existingFiles.length > 0) {
+      // Show warning about skipped files
+      if (result.addedFiles.length === 0) {
+        vscode.window.showWarningMessage(
+          `No files added - all selected files already exist: ${result.existingFiles.join(', ')}`,
+        );
+      } else {
+        vscode.window.showWarningMessage(
+          `Added ${result.addedFiles.length} file(s), skipped ${result.existingFiles.length} existing file(s): ${result.existingFiles.join(', ')}`,
+        );
+      }
+    } else if (result.addedFiles.length > 0) {
+      // All files added successfully
+      vscode.window.showInformationMessage(
+        `Successfully added ${result.addedFiles.length} file(s) to ${componentName}!`,
+      );
+    } else {
+      // Some other error occurred
+      vscode.window.showErrorMessage('Failed to add any files to the component.');
+    }
   } catch (error) {
     vscode.window.showErrorMessage(
       `Error adding files: ${error instanceof Error ? error.message : String(error)}`,
