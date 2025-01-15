@@ -14,26 +14,26 @@
     "commands": [
       {
         "command": "extension.createFullComponent",
-        "title": "Create Full Component"
+        "title": "Create (Full)"
       },
       {
         "command": "extension.createAltComponent",
-        "title": "Create Alt Component"
+        "title": "Create (Choose Type)..."
       },
       {
         "command": "extension.renameReactComponent",
-        "title": "Rename Component"
+        "title": "Rename"
       },
       {
         "command": "extension.addComponentFiles",
-        "title": "Add Files"
+        "title": "Add Files..."
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "submenu": "component.actions",
-          "group": "navigation"
+          "group": "navigation@1"
         }
       ],
       "component.actions": [

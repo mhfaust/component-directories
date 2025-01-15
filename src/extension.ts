@@ -183,6 +183,82 @@ async function updateImportReferences(oldName: string, newName: string) {
   await vscode.workspace.applyEdit(workspaceEdit);
 }
 
+async function createAltComponent(uri: vscode.Uri) {
+  if (!uri || !uri.fsPath) {
+    vscode.window.showErrorMessage('Please right-click a directory to generate the component.');
+    return;
+  }
+
+  const configResult = await findConfig(uri.fsPath);
+  if (!configResult) {
+    return;
+  }
+
+  const { config, configDir } = configResult;
+
+  if (!config.alternateTemplateGroups || config.alternateTemplateGroups.length === 0) {
+    vscode.window.showErrorMessage('No alternate template groups defined in configuration.');
+    return;
+  }
+
+  // Create QuickPick items from template groups
+  const quickPickItems = config.alternateTemplateGroups.map((group) => ({
+    label: group.label,
+    description: `${group.templates.length} file${group.templates.length === 1 ? '' : 's'}`,
+    templateGroup: group,
+  }));
+
+  // Show QuickPick to user
+  const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+    placeHolder: 'Select component type...',
+    title: 'Create Component',
+  });
+
+  if (!selectedItem) {
+    return; // User cancelled
+  }
+
+  // Get component name from user
+  const componentName = await vscode.window.showInputBox({
+    prompt: 'Component name in PascalCase',
+    placeHolder: 'e.g. MyComponent',
+    validateInput: (value) => {
+      if (!/^[A-Z][A-Za-z0-9]*$/.test(value)) {
+        return 'Component name must be in PascalCase';
+      }
+      return null;
+    },
+  });
+
+  if (!componentName) {
+    return; // User cancelled
+  }
+
+  const templatesPath = path.join(configDir, config.templatesDir);
+
+  try {
+    await generateFromTemplates(
+      componentName,
+      uri.fsPath,
+      selectedItem.templateGroup.templates,
+      templatesPath,
+      config.replacements,
+    );
+    vscode.window.showInformationMessage(
+      `Component ${componentName} created successfully using ${selectedItem.label} template!`,
+    );
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Error generating component: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+let createAltComponentDisposable = vscode.commands.registerCommand(
+  'extension.createAltComponent',
+  createAltComponent,
+);
+
 export function activate(context: vscode.ExtensionContext) {
   let createDisposable = vscode.commands.registerCommand(
     'extension.createFullComponent',
@@ -273,4 +349,5 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(createDisposable);
   context.subscriptions.push(renameDisposable);
+  context.subscriptions.push(createAltComponentDisposable);
 }
