@@ -1,5 +1,6 @@
 {
   "name": "react-component-generator",
+  "type": "module",
   "displayName": "react-component-generator",
   "description": "Adds a context menu to execute commands ani",
   "version": "0.0.1",
