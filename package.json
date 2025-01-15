@@ -13,12 +13,20 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.createReactComponent",
-        "title": "Create Component"
+        "command": "extension.createFullComponent",
+        "title": "Create Full Component"
+      },
+      {
+        "command": "extension.createAltComponent",
+        "title": "Create Alt Component"
       },
       {
         "command": "extension.renameReactComponent",
         "title": "Rename Component"
+      },
+      {
+        "command": "extension.addComponentFiles",
+        "title": "Add Files"
       }
     ],
     "menus": {
@@ -30,12 +38,20 @@
       ],
       "component.actions": [
         {
-          "command": "extension.createReactComponent",
-          "group": "1_create"
+          "command": "extension.createFullComponent",
+          "group": "1_create@1"
+        },
+        {
+          "command": "extension.createAltComponent",
+          "group": "1_create@2"
         },
         {
           "command": "extension.renameReactComponent",
-          "group": "2_modify"
+          "group": "2_modify@1"
+        },
+        {
+          "command": "extension.addComponentFiles",
+          "group": "2_modify@2"
         }
       ]
     },

@@ -5,10 +5,19 @@ import * as path from 'path';
 interface TemplateConfig {
   templatesDir: string;
   replacements: { [key: string]: string };
-  templates: {
-    source: string;
-    target: string;
-  }[];
+  mainTemplates: TemplateItem[];
+  alternateTemplateGroups?: TemplateGroup[];
+}
+
+interface TemplateItem {
+  source: string;
+  target: string;
+  label: string;
+}
+
+interface TemplateGroup {
+  label: string;
+  templates: TemplateItem[];
 }
 
 async function findConfig(
@@ -37,36 +46,46 @@ async function findConfig(
   return null;
 }
 
-async function generateComponent(
+async function generateSingleFile(
   componentName: string,
   targetDir: string,
-  config: TemplateConfig,
-  workspaceRoot: string,
-) {
-  const templatesPath = path.join(workspaceRoot, config.templatesDir);
+  template: TemplateItem,
+  templatesPath: string,
+  replacements: { [key: string]: string },
+): Promise<void> {
+  // Read template file
+  const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
 
-  for (const template of config.templates) {
-    // Read template file
-    const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
+  // Replace all tokens in content
+  let processedContent = templateContent;
+  for (const [token, replacement] of Object.entries(replacements)) {
+    processedContent = processedContent.replaceAll(
+      token,
+      replacement === 'componentName' ? componentName : replacement,
+    );
+  }
 
-    // Replace all tokens in content
-    let processedContent = templateContent;
-    for (const [token, replacement] of Object.entries(config.replacements)) {
-      processedContent = processedContent.replaceAll(
-        token,
-        replacement === 'componentName' ? componentName : replacement,
-      );
-    }
+  // Process target path
+  const processedTarget = template.target.replaceAll('${componentName}', componentName);
+  const targetPath = path.join(targetDir, processedTarget);
 
-    // Process target path
-    const processedTarget = template.target.replaceAll('${componentName}', componentName);
-    const targetPath = path.join(targetDir, processedTarget);
+  // Ensure directory exists
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
 
-    // Ensure directory exists
-    await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  // Write file
+  await fs.writeFile(targetPath, processedContent);
+}
 
-    // Write file
-    await fs.writeFile(targetPath, processedContent);
+// New function to generate files from a template group
+async function generateFromTemplates(
+  componentName: string,
+  targetDir: string,
+  templates: TemplateItem[],
+  templatesPath: string,
+  replacements: { [key: string]: string },
+): Promise<void> {
+  for (const template of templates) {
+    await generateSingleFile(componentName, targetDir, template, templatesPath, replacements);
   }
 }
 
@@ -166,7 +185,7 @@ async function updateImportReferences(oldName: string, newName: string) {
 
 export function activate(context: vscode.ExtensionContext) {
   let createDisposable = vscode.commands.registerCommand(
-    'extension.createReactComponent',
+    'extension.createFullComponent',
     async (uri: vscode.Uri) => {
       if (!uri || !uri.fsPath) {
         vscode.window.showErrorMessage('Please right-click a directory to generate the component.');
@@ -179,8 +198,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const { config, configDir } = configResult;
+      const templatesPath = path.join(configDir, config.templatesDir);
 
-      // Now when we process templates, use configDir instead of workspaceRoot
       const componentName = await vscode.window.showInputBox({
         prompt: 'Component name in PascalCase',
         placeHolder: 'e.g. MyComponent',
@@ -191,7 +210,13 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       try {
-        await generateComponent(componentName, uri.fsPath, config, configDir);
+        await generateFromTemplates(
+          componentName,
+          uri.fsPath,
+          config.mainTemplates,
+          templatesPath,
+          config.replacements,
+        );
         vscode.window.showInformationMessage(`Component ${componentName} created successfully!`);
       } catch (error) {
         vscode.window.showErrorMessage(
@@ -200,8 +225,6 @@ export function activate(context: vscode.ExtensionContext) {
       }
     },
   );
-
-  context.subscriptions.push(createDisposable);
 
   let renameDisposable = vscode.commands.registerCommand(
     'extension.renameReactComponent',
@@ -248,5 +271,6 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  context.subscriptions.push(createDisposable);
   context.subscriptions.push(renameDisposable);
 }
