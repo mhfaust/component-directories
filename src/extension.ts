@@ -1,23 +1,26 @@
 import * as vscode from 'vscode';
-import { createAltComponent } from './generationUtils';
 import { renameCommand } from './commands/rename';
 import { createWithDefaultFiles } from './commands/createWithDefaultFiles';
 import { addFiles } from './commands/addFiles';
+import { createAltComponent } from './commands/createWithAltFiles';
 
 export function activate(context: vscode.ExtensionContext) {
-  let createAltComponentDisposable = vscode.commands.registerCommand(
+  const createAltComponentDisposable = vscode.commands.registerCommand(
     'extension.createAltComponent',
     createAltComponent,
   );
 
-  let addFilesDisposable = vscode.commands.registerCommand('extension.addComponentFiles', addFiles);
+  const addFilesDisposable = vscode.commands.registerCommand(
+    'extension.addComponentFiles',
+    addFiles,
+  );
 
-  let createDefaultDisposable = vscode.commands.registerCommand(
+  const createDefaultDisposable = vscode.commands.registerCommand(
     'extension.createDefault',
     createWithDefaultFiles,
   );
 
-  let renameDisposable = vscode.commands.registerCommand(
+  const renameDisposable = vscode.commands.registerCommand(
     'extension.renameComponent',
     renameCommand,
   );

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findConfig } from '../configurationUtils';
-import { generateFromTemplates, validateComponentName } from '../generationUtils';
+import { findConfig, validateComponentName } from '../configurationUtils';
+import { generateFromTemplates } from '../generationUtils';
 
 export const createWithDefaultFiles = async (uri: vscode.Uri) => {
   if (!uri || !uri.fsPath) {

@@ -21,6 +21,13 @@ type TemplateGroup = {
   templates: TemplateItem[];
 };
 
+export function validateComponentName(name: string, pattern: string): string | null {
+  if (!new RegExp(pattern).test(name)) {
+    return `Component name must match pattern: ${pattern}`;
+  }
+  return null;
+}
+
 function validateConfig(config: any): config is TemplateConfig {
   if (!config.templatesDir || typeof config.templatesDir !== 'string') {
     throw new Error('Missing or invalid templatesDir configuration');

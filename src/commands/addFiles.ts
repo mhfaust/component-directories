@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findConfig, TemplateItem } from '../configurationUtils';
-import { generateFromTemplates, validateComponentName } from '../generationUtils';
+import { findConfig, TemplateItem, validateComponentName } from '../configurationUtils';
+import { generateFromTemplates } from '../generationUtils';
 
 interface QuickPickTemplateItem extends vscode.QuickPickItem {
   template: TemplateItem;
@@ -29,7 +29,6 @@ export async function addFiles(uri: vscode.Uri) {
     return;
   }
 
-  // Create QuickPick items array combining all templates
   const quickPickItems: (QuickPickTemplateItem | vscode.QuickPickItem)[] = [];
 
   // Add main templates section
@@ -43,7 +42,7 @@ export async function addFiles(uri: vscode.Uri) {
       ...config.mainTemplates.map((template) => ({
         label: template.label,
         template: template,
-        description: path.basename(template.target),
+        description: path.basename(template.target.replaceAll('{{componentName}}', componentName)),
       })),
     );
   }
@@ -60,7 +59,9 @@ export async function addFiles(uri: vscode.Uri) {
         ...group.templates.map((template) => ({
           label: template.label,
           template: template,
-          description: path.basename(template.target),
+          description: path.basename(
+            template.target.replaceAll('{{componentName}}', componentName),
+          ),
         })),
       );
     }
