@@ -15,15 +15,15 @@
     "commands": [
       {
         "command": "extension.createDefault",
-        "title": "Create (Full)"
+        "title": "Create..."
       },
       {
         "command": "extension.createAltComponent",
-        "title": "Create (Choose Type)..."
+        "title": "Create (choose file set)..."
       },
       {
         "command": "extension.renameComponent",
-        "title": "Rename"
+        "title": "Rename..."
       },
       {
         "command": "extension.addComponentFiles",
@@ -53,11 +53,11 @@
           "group": "1_create@2"
         },
         {
-          "command": "extension.renameComponent",
+          "command": "extension.addComponentFiles",
           "group": "2_modify@1"
         },
         {
-          "command": "extension.addComponentFiles",
+          "command": "extension.renameComponent",
           "group": "2_modify@2"
         }
       ]

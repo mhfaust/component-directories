@@ -32,14 +32,14 @@ export async function addFiles(uri: vscode.Uri) {
   const quickPickItems: (QuickPickTemplateItem | vscode.QuickPickItem)[] = [];
 
   // Add main templates section
-  if (config.mainTemplates.length > 0) {
+  if (config.defaultTemplateGroup.length > 0) {
     quickPickItems.push({
       label: 'Main Templates',
       kind: vscode.QuickPickItemKind.Separator,
     });
 
     quickPickItems.push(
-      ...config.mainTemplates.map((template) => ({
+      ...config.defaultTemplateGroup.map((template) => ({
         label: template.label,
         template: template,
         description: path.basename(template.target.replaceAll('{{componentName}}', componentName)),

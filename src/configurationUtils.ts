@@ -6,7 +6,7 @@ type TemplateConfig = {
   templatesDir: string;
   componentNamePattern: string;
   replacements: { [key: string]: string };
-  mainTemplates: TemplateItem[];
+  defaultTemplateGroup: TemplateItem[];
   alternateTemplateGroups?: TemplateGroup[];
 };
 
@@ -43,8 +43,8 @@ function validateConfig(config: any): config is TemplateConfig {
   if (!config.replacements || typeof config.replacements !== 'object') {
     throw new Error('Missing or invalid replacements configuration');
   }
-  if (!Array.isArray(config.mainTemplates)) {
-    throw new Error('Missing or invalid mainTemplates configuration');
+  if (!Array.isArray(config.defaultTemplateGroup)) {
+    throw new Error('Missing or invalid defaultTemplateGroup configuration');
   }
   return true;
 }
@@ -59,7 +59,7 @@ async function validateTemplates(config: TemplateConfig, templatesPath: string):
     }
   };
 
-  for (const template of config.mainTemplates) {
+  for (const template of config.defaultTemplateGroup) {
     await validateTemplate(template);
   }
 

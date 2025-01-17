@@ -1,5 +1,9 @@
 # Component Directories
 
+<div align="center" >
+  <img src="icon-multifile.svg" width="128" height="128" alt="Component Generator Icon">
+</div>
+
 A Visual Studio Code extension that streamlines component creation and management through customizable templates. Framework-agnostic - use it with any component-based project structure!
 
 ## Features
@@ -35,7 +39,7 @@ Create a `.component-templates.json` file in any directory where you want to def
   "replacements": {
     "__COMPONENT_NAME__": "componentName"
   },
-  "mainTemplates": [
+  "defaultTemplateGroup": [
     {
       "source": "component.template",
       "target": "${componentName}/${componentName}",

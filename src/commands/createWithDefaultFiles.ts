@@ -30,7 +30,7 @@ export const createWithDefaultFiles = async (uri: vscode.Uri) => {
     await generateFromTemplates(
       componentName,
       uri.fsPath,
-      config.mainTemplates,
+      config.defaultTemplateGroup,
       templatesPath,
       config.replacements,
     );
