@@ -1,7 +1,8 @@
 {
-  "name": "react-component-generator",
-  "displayName": "react-component-generator",
-  "description": "Adds a context menu to execute commands ani",
+  "name": "component-directories",
+  "displayName": "Compnoent Directories",
+  "description": "Generate and and rename components as files grouped by a directory. Language and framework agnostic",
+  "icon": "icon-multifile.png",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.96.0"
