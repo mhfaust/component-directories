@@ -34,7 +34,13 @@
       "explorer/context": [
         {
           "submenu": "component.actions",
-          "group": "navigation@1"
+          "group": "2_workspace@1",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "____",
+          "group": "2_workspace@1",
+          "when": "false"
         }
       ],
       "component.actions": [
