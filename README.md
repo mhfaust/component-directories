@@ -1,9 +1,5 @@
 # Component Directories
 
-<div align="center" >
-  <img src="icon-multifile.png" width="128" height="128" alt="Component Generator Icon">
-</div>
-
 A Visual Studio Code extension that streamlines component creation and management through customizable templates. Framework-agnostic - use it with any component-based project structure!
 
 ## Features
@@ -110,4 +106,4 @@ Contributions are welcome! Please:
 
 ## License
 
-[Add your chosen license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

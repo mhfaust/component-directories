@@ -11,6 +11,7 @@
     "Other"
   ],
   "publisher": "your-publisher-name",
+  "license": "MIT",
   "galleryBanner": {
     "color": "#C80000",
     "theme": "dark"
