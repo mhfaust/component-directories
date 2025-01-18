@@ -1,16 +1,16 @@
 {
   "name": "component-directories",
-  "displayName": "Compnoent Directories",
+  "displayName": "Component Directories",
   "description": "Generate and and rename components as files grouped by a directory. Language and framework agnostic",
   "icon": "icon-multifile.png",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
     "Other"
   ],
-  "publisher": "your-publisher-name",
+  "publisher": "MHFaust",
   "license": "MIT",
   "galleryBanner": {
     "color": "#C80000",
