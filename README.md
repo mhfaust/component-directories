@@ -10,6 +10,13 @@ A Visual Studio Code extension that streamlines component creation and managemen
 - **Component Management**: Rename components and add new files to existing components
 - **Smart Import Updates**: Automatically updates import statements when renaming components (for TypeScript/JavaScript projects)
 
+## Quick Start
+
+1. Install from VS Code marketplace: search for "Component Directories"
+2. Create `.component-templates.json` in your project root
+3. Create a `component-templates` directory with your template files
+4. Right-click any folder in VS Code's explorer and select "Component > Create..."
+
 ## Getting Started
 
 1. Install the extension from the VS Code marketplace
@@ -30,13 +37,10 @@ Create a `.component-templates.json` file in any directory where you want to def
 {
   "templatesDir": "./component-templates",
   "componentNamePattern": "^[A-Z][a-zA-Z0-9]*$",
-  "replacements": {
-    "__COMPONENT_NAME__": "componentName"
-  },
   "defaultTemplateGroup": [
     {
       "source": "component.template",
-      "target": "${componentName}/${componentName}",
+      "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}",
       "label": "Component"
     }
   ],
@@ -46,7 +50,7 @@ Create a `.component-templates.json` file in any directory where you want to def
       "templates": [
         {
           "source": "simple.template",
-          "target": "${componentName}/${componentName}",
+          "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}",
           "label": "Simple Component"
         }
       ]
@@ -64,14 +68,22 @@ Right-click in the explorer to access these commands under the "Component" menu:
 - **Rename**: Rename a component and update its imports throughout the project (TypeScript/JavaScript projects only)
 - **Add Files...**: Add additional template-based files to an existing component
 
-## Template Structure
+## Template Usage
 
-Templates should be placed in the configured templates directory. Each template can use these variables:
+The `{{COMPONENT_NAME}}` token is used both in template file paths and template content:
 
-- `__COMPONENT_NAME__`: Replaced with the component name
-- Custom variables defined in the `replacements` configuration
+In `.component-templates.json`:
 
-Your templates can include any file types or structures needed for your framework or language of choice.
+```json
+{
+  "defaultTemplateGroup": [
+    {
+      "source": "component.tsx.template",
+      "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}.tsx",
+      "label": "Component"
+    }
+  ]
+}
 
 ## Development
 
@@ -107,3 +119,4 @@ Contributions are welcome! Please:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```
