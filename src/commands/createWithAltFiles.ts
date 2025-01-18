@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findConfig, validateComponentName } from '../utils/configurationUtils';
+import {
+  findConfig,
+  validateComponentName,
+  getComponentNamePrompt,
+} from '../utils/configurationUtils';
 import { generateFromTemplates } from '../utils/generationUtils';
 
 export async function createAltComponent(uri: vscode.Uri) {
@@ -37,7 +41,7 @@ export async function createAltComponent(uri: vscode.Uri) {
   }
 
   const componentName = await vscode.window.showInputBox({
-    prompt: 'Component name in PascalCase',
+    prompt: getComponentNamePrompt(config),
     placeHolder: 'e.g. MyComponent',
     validateInput: (value) => validateComponentName(value, config.componentNamePattern),
   });

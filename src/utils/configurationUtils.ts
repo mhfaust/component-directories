@@ -16,10 +16,18 @@ export type TemplateGroup = {
 type TemplateConfig = {
   templatesDir: string;
   componentNamePattern: string;
+  componentNamePatternLabel?: string;
   templates: TemplateItem[];
   defaultTemplateGroup: string[];
   alternateTemplateGroups?: TemplateGroup[];
 };
+
+export function getComponentNamePrompt(config: TemplateConfig): string {
+  if (config.componentNamePatternLabel) {
+    return `Component name (${config.componentNamePatternLabel})`;
+  }
+  return 'Component name';
+}
 
 export function validateComponentName(name: string, pattern: string): string | null {
   if (!new RegExp(pattern).test(name)) {
@@ -47,6 +55,10 @@ function validateConfig(config: any): config is TemplateConfig {
     new RegExp(config.componentNamePattern);
   } catch (e) {
     throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
+  }
+
+  if (config.componentNamePatternLabel && typeof config.componentNamePatternLabel !== 'string') {
+    throw new Error('componentNamePatternLabel must be a string if provided');
   }
 
   if (!Array.isArray(config.templates)) {

@@ -86,6 +86,28 @@ Create a `.component-templates.json` file in any directory where you want to def
 }
 ```
 
+### Configuration Options
+
+| Option                      | Required | Description                                              |
+| --------------------------- | -------- | -------------------------------------------------------- |
+| `templatesDir`              | Yes      | Name of the directory containing template files          |
+| `componentNamePattern`      | Yes      | Regular expression that component names must match       |
+| `componentNamePatternLabel` | No       | Human-readable description of the naming pattern         |
+| `defaultTemplateGroup`      | Yes      | Array of template sources to use by default              |
+| `alternateTemplateGroups`   | No       | Additional template groups for different component types |
+| `templates`                 | Yes      | Array of template definitions                            |
+
+For example, to support Vue.js components using kebab-case:
+
+```json
+{
+  "templatesDir": "component-templates",
+  "componentNamePattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+  "componentNamePatternLabel": "kebab-case",
+  ...
+}
+```
+
 ## Commands
 
 Right-click in the explorer to access these commands under the "Component" menu:
@@ -106,7 +128,7 @@ In `.component-templates.json`:
   "defaultTemplateGroup": [
     {
       "source": "component.tsx.template",
-      "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}.tsx",
+      "target": "{{COMPONENT_NAME}}.tsx",
       "label": "Component"
     }
   ]
