@@ -2,22 +2,23 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
-type TemplateConfig = {
-  templatesDir: string;
-  componentNamePattern: string;
-  defaultTemplateGroup: TemplateItem[];
-  alternateTemplateGroups?: TemplateGroup[];
-};
-
 export type TemplateItem = {
   source: string;
   target: string;
   label: string;
 };
 
-type TemplateGroup = {
+export type TemplateGroup = {
   label: string;
+  templates: string[];
+};
+
+type TemplateConfig = {
+  templatesDir: string;
+  componentNamePattern: string;
   templates: TemplateItem[];
+  defaultTemplateGroup: string[];
+  alternateTemplateGroups?: TemplateGroup[];
 };
 
 export function validateComponentName(name: string, pattern: string): string | null {
@@ -48,31 +49,57 @@ function validateConfig(config: any): config is TemplateConfig {
     throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
   }
 
+  if (!Array.isArray(config.templates)) {
+    throw new Error('Missing or invalid templates array configuration');
+  }
+
   if (!Array.isArray(config.defaultTemplateGroup)) {
     throw new Error('Missing or invalid defaultTemplateGroup configuration');
   }
+
+  // Validate that all templates referenced in groups exist in the templates array
+  const templateSources = new Set(config.templates?.map((t: TemplateItem) => t.source));
+
+  // Check defaultTemplateGroup references
+  for (const source of config.defaultTemplateGroup) {
+    if (!templateSources.has(source)) {
+      throw new Error(
+        `Template "${source}" referenced in defaultTemplateGroup not found in templates array`,
+      );
+    }
+  }
+
+  // Check alternateTemplateGroups references
+  if (config.alternateTemplateGroups) {
+    for (const group of config.alternateTemplateGroups) {
+      if (!group.label || typeof group.label !== 'string') {
+        throw new Error('Invalid or missing label in alternateTemplateGroup');
+      }
+      if (!Array.isArray(group.templates)) {
+        throw new Error(`Invalid templates array in alternateTemplateGroup "${group.label}"`);
+      }
+      for (const source of group.templates) {
+        if (!templateSources.has(source)) {
+          throw new Error(
+            `Template "${source}" referenced in group "${group.label}" not found in templates array`,
+          );
+        }
+      }
+    }
+  }
+
   return true;
 }
 
 async function validateTemplates(config: TemplateConfig, templatesPath: string): Promise<string[]> {
   const errors: string[] = [];
-  const validateTemplate = async (template: TemplateItem) => {
+
+  // Validate all template files exist
+  for (const template of config.templates) {
     try {
       await fs.access(path.join(templatesPath, template.source));
     } catch {
       errors.push(`Template file not found: ${template.source}`);
-    }
-  };
-
-  for (const template of config.defaultTemplateGroup) {
-    await validateTemplate(template);
-  }
-
-  if (config.alternateTemplateGroups) {
-    for (const group of config.alternateTemplateGroups) {
-      for (const template of group.templates) {
-        await validateTemplate(template);
-      }
     }
   }
 
@@ -127,14 +154,9 @@ export async function findConfig(
         return null;
       }
 
-      // Validate the configuration
       const validationResult = await validateFullConfig(parsedConfig, configPath);
 
       if (!validationResult.isValid) {
-        // Join all validation errors into a clear message
-        const errorMessage = validationResult.errors.join('\n• ');
-
-        // Show error dialog with details
         const showDetails = 'Show Details';
         const selected = await vscode.window.showErrorMessage(
           'Configuration validation failed. Click "Show Details" for more information.',
@@ -142,7 +164,6 @@ export async function findConfig(
         );
 
         if (selected === showDetails) {
-          // Create and show output channel with detailed errors
           const channel = vscode.window.createOutputChannel('Component Generator');
           channel.clear();
           channel.appendLine('Component Generator Configuration Errors:');
@@ -159,13 +180,11 @@ export async function findConfig(
         return null;
       }
 
-      // If validation passed, return the config
       return {
         config: parsedConfig as TemplateConfig,
         configDir: currentPath,
       };
     } catch (error) {
-      // No config found at this level, move up one directory
       currentPath = path.dirname(currentPath);
     }
   }

@@ -4,7 +4,7 @@ import { findConfig, TemplateItem, validateComponentName } from '../utils/config
 import { generateFromTemplates } from '../utils/generationUtils';
 
 interface QuickPickTemplateItem extends vscode.QuickPickItem {
-  template: TemplateItem;
+  templateSource: string;
 }
 
 export async function addFiles(uri: vscode.Uri) {
@@ -31,19 +31,31 @@ export async function addFiles(uri: vscode.Uri) {
 
   const quickPickItems: (QuickPickTemplateItem | vscode.QuickPickItem)[] = [];
 
-  // Add main templates section
+  // Function to find template details by source
+  const getTemplateDetails = (source: string): TemplateItem | undefined =>
+    config.templates.find((t) => t.source === source);
+
+  // Add default templates section
   if (config.defaultTemplateGroup.length > 0) {
     quickPickItems.push({
-      label: 'Main Templates',
+      label: 'Default Template Group Files',
       kind: vscode.QuickPickItemKind.Separator,
     });
 
     quickPickItems.push(
-      ...config.defaultTemplateGroup.map((template) => ({
-        label: template.label,
-        template: template,
-        description: path.basename(template.target.replaceAll('{{COMPONENT_NAME}}', componentName)),
-      })),
+      ...config.defaultTemplateGroup.map((source) => {
+        const template = getTemplateDetails(source);
+        if (!template) {
+          throw new Error(`Template not found: ${source}`);
+        }
+        return {
+          label: template.label,
+          templateSource: source,
+          description: path.basename(
+            template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
+          ),
+        };
+      }),
     );
   }
 
@@ -56,13 +68,19 @@ export async function addFiles(uri: vscode.Uri) {
       });
 
       quickPickItems.push(
-        ...group.templates.map((template) => ({
-          label: template.label,
-          template: template,
-          description: path.basename(
-            template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
-          ),
-        })),
+        ...group.templates.map((source) => {
+          const template = getTemplateDetails(source);
+          if (!template) {
+            throw new Error(`Template not found: ${source}`);
+          }
+          return {
+            label: template.label,
+            templateSource: source,
+            description: path.basename(
+              template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
+            ),
+          };
+        }),
       );
     }
   }
@@ -83,13 +101,13 @@ export async function addFiles(uri: vscode.Uri) {
     return; // User cancelled or selected nothing
   }
 
-  // Filter out any separator items and get just the templates
-  const selectedTemplates = selectedItems
+  // Filter out any separator items and get just the template sources
+  const selectedTemplateSources = selectedItems
     .filter(
       (item): item is QuickPickTemplateItem =>
         !('kind' in item) || item.kind !== vscode.QuickPickItemKind.Separator,
     )
-    .map((item) => item.template);
+    .map((item) => item.templateSource);
 
   const templatesPath = path.join(configDir, config.templatesDir);
 
@@ -97,7 +115,8 @@ export async function addFiles(uri: vscode.Uri) {
     const result = await generateFromTemplates(
       componentName,
       path.dirname(uri.fsPath),
-      selectedTemplates,
+      selectedTemplateSources,
+      config.templates,
       templatesPath,
     );
 

@@ -53,6 +53,7 @@ export async function createAltComponent(uri: vscode.Uri) {
       componentName,
       uri.fsPath,
       selectedItem.templateGroup.templates,
+      config.templates,
       templatesPath,
     );
     vscode.window.showInformationMessage(

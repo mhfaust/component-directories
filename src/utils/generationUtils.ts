@@ -14,10 +14,7 @@ export async function generateSingleFile(
   template: TemplateItem,
   templatesPath: string,
 ): Promise<{ success: boolean; path: string; exists: boolean }> {
-  // Process the target filename only, without directory
   const processedTarget = template.target.replaceAll('{{COMPONENT_NAME}}', componentName);
-
-  // Always place in component directory
   const componentDir = path.join(targetDir, componentName);
   const targetPath = path.join(componentDir, processedTarget);
 
@@ -32,10 +29,7 @@ export async function generateSingleFile(
     const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
     const processedContent = templateContent.replaceAll('{{COMPONENT_NAME}}', componentName);
 
-    // Ensure component directory exists
     await fs.mkdir(componentDir, { recursive: true });
-
-    // Write file
     await fs.writeFile(targetPath, processedContent);
     return { success: true, path: processedTarget, exists: false };
   } catch (error) {
@@ -43,12 +37,23 @@ export async function generateSingleFile(
   }
 }
 
+function findTemplateItem(templateSource: string, templates: TemplateItem[]): TemplateItem {
+  const template = templates.find((t) => t.source === templateSource);
+  if (!template) {
+    throw new Error(`Template not found: ${templateSource}`);
+  }
+  return template;
+}
+
 export async function generateFromTemplates(
   componentName: string,
   targetDir: string,
-  templates: TemplateItem[],
+  templateSources: string[],
+  templateItems: TemplateItem[],
   templatesPath: string,
 ): Promise<GenerationResult> {
+  const templates = templateSources.map((source) => findTemplateItem(source, templateItems));
+
   const results = await Promise.all(
     templates.map((template) =>
       generateSingleFile(componentName, targetDir, template, templatesPath),
