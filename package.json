@@ -10,7 +10,35 @@
   "categories": [
     "Other"
   ],
+  "publisher": "your-publisher-name",
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "dark"
+  },
+  "keywords": [
+    "component",
+    "generator",
+    "templates",
+    "react",
+    "vue",
+    "angular"
+  ],
+  "preview": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mhfaust/component-directorie"
+  },
+  "homepage": "https://github.com/mhfaust/component-directories#readme",
+  "bugs": {
+    "url": "https://github.com/mhfaust/component-directories/issues"
+  },
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:extension.createDefault",
+    "onCommand:extension.createAltComponent",
+    "onCommand:extension.renameComponent",
+    "onCommand:extension.addComponentFiles"
+  ],
   "contributes": {
     "commands": [
       {

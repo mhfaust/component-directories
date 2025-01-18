@@ -1,7 +1,7 @@
 # Component Directories
 
 <div align="center" >
-  <img src="icon-multifile.svg" width="128" height="128" alt="Component Generator Icon">
+  <img src="icon-multifile.png" width="128" height="128" alt="Component Generator Icon">
 </div>
 
 A Visual Studio Code extension that streamlines component creation and management through customizable templates. Framework-agnostic - use it with any component-based project structure!
@@ -9,11 +9,9 @@ A Visual Studio Code extension that streamlines component creation and managemen
 ## Features
 
 - **Framework Agnostic**: Create components for any framework or library using customizable templates
-- **Template-Based Component Generation**: Generate components using predefined templates
-- **Multiple Component Types**: Support for different component structures through template groups
-- **Hierarchical Configuration**: Define different templates for different parts of your project using directory-specific configurations
+- **Template-Based, Configurable Sets**: Generate components using predefined sets of templates, configured via JSON
+- **Hierarchical Configuration**: Define different template Groups for different parts of your project using directory-specific JSON configurations
 - **Component Management**: Rename components and add new files to existing components
-- **Configurable Templates**: Customize component templates through a JSON configuration file
 - **Smart Import Updates**: Automatically updates import statements when renaming components (for TypeScript/JavaScript projects)
 
 ## Getting Started
