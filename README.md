@@ -14,16 +14,38 @@ A Visual Studio Code extension that streamlines component creation and managemen
 
 1. Install from VS Code marketplace: search for "Component Directories"
 2. Create `.component-templates.json` in your project root
-3. Create a `component-templates` directory with your template files
+3. Create a directory next to your config file to store your templates (e.g., "component-templates")
 4. Right-click any folder in VS Code's explorer and select "Component > Create..."
 
 ## Getting Started
 
 1. Install the extension from the VS Code marketplace
 2. Create a `.component-templates.json` configuration file in your project root
-3. Right-click in the explorer to access component generation commands
+3. Create your template directory as a sibling to your config file
+4. Right-click in the explorer to access component generation commands
 
 ## Configuration
+
+### Template Directory Structure
+
+The extension requires a specific structure for your template files:
+
+```
+your-project/
+├── .component-templates.json
+├── component-templates/        # Must be a sibling to the config file; configurable name is specified in .component-templates.json
+│   ├── component.tsx.template  # (or whatever main file your project-type requires)
+│   ├── index.ts.template       # (e.g., if you want to have default exports from the component directory)
+│   └── ... other templates
+└── ... other project files
+```
+
+- The template directory must be a direct sibling to your `.component-templates.json` file
+- The `templatesDir` setting in your config must be a simple directory name without any path info
+  - ✅ Correct: `"templatesDir": "component-templates"`
+  - ❌ Incorrect: `"templatesDir": "./templates"` or `"templatesDir": "path/to/templates"`
+
+### Configuration File
 
 The extension uses `.component-templates.json` files for configuration. These can be placed at any level in your project hierarchy - the extension will look for the nearest configuration file in the current or any parent directory. This allows you to:
 
@@ -35,13 +57,18 @@ Create a `.component-templates.json` file in any directory where you want to def
 
 ```json
 {
-  "templatesDir": "./component-templates",
+  "templatesDir": "component-templates",
   "componentNamePattern": "^[A-Z][a-zA-Z0-9]*$",
   "defaultTemplateGroup": [
     {
-      "source": "component.template",
-      "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}",
+      "source": "component.tsx.template",
+      "target": "{{COMPONENT_NAME}}.tsx",
       "label": "Component"
+    },
+    {
+      "source": "index.template",
+      "target": "index.ts",
+      "label": "Index"
     }
   ],
   "alternateTemplateGroups": [
@@ -50,7 +77,7 @@ Create a `.component-templates.json` file in any directory where you want to def
       "templates": [
         {
           "source": "simple.template",
-          "target": "{{COMPONENT_NAME}}/{{COMPONENT_NAME}}",
+          "target": "{{COMPONENT_NAME}}.tsx",
           "label": "Simple Component"
         }
       ]
@@ -84,6 +111,7 @@ In `.component-templates.json`:
     }
   ]
 }
+```
 
 ## Development
 
@@ -119,4 +147,3 @@ Contributions are welcome! Please:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```

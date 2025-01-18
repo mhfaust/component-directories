@@ -31,14 +31,23 @@ function validateConfig(config: any): config is TemplateConfig {
   if (!config.templatesDir || typeof config.templatesDir !== 'string') {
     throw new Error('Missing or invalid templatesDir configuration');
   }
+
+  if (config.templatesDir.includes('/') || config.templatesDir.includes('\\')) {
+    throw new Error(
+      'templatesDir must be a directory name without any path segments (e.g. "component-templates" not "./templates" or "path/to/templates")',
+    );
+  }
+
   if (!config.componentNamePattern || typeof config.componentNamePattern !== 'string') {
     throw new Error('Missing or invalid componentNamePattern configuration');
   }
+
   try {
     new RegExp(config.componentNamePattern);
   } catch (e) {
     throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
   }
+
   if (!Array.isArray(config.defaultTemplateGroup)) {
     throw new Error('Missing or invalid defaultTemplateGroup configuration');
   }
