@@ -54,7 +54,6 @@ export async function createAltComponent(uri: vscode.Uri) {
       uri.fsPath,
       selectedItem.templateGroup.templates,
       templatesPath,
-      config.replacements,
     );
     vscode.window.showInformationMessage(
       `Component ${componentName} created successfully using ${selectedItem.label} template!`,

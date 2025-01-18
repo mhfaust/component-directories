@@ -5,7 +5,6 @@ import * as fs from 'fs/promises';
 type TemplateConfig = {
   templatesDir: string;
   componentNamePattern: string;
-  replacements: { [key: string]: string };
   defaultTemplateGroup: TemplateItem[];
   alternateTemplateGroups?: TemplateGroup[];
 };
@@ -40,9 +39,6 @@ function validateConfig(config: any): config is TemplateConfig {
   } catch (e) {
     throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
   }
-  if (!config.replacements || typeof config.replacements !== 'object') {
-    throw new Error('Missing or invalid replacements configuration');
-  }
   if (!Array.isArray(config.defaultTemplateGroup)) {
     throw new Error('Missing or invalid defaultTemplateGroup configuration');
   }
@@ -74,19 +70,6 @@ async function validateTemplates(config: TemplateConfig, templatesPath: string):
   return errors;
 }
 
-function validateReplacements(config: TemplateConfig): string[] {
-  const errors: string[] = [];
-  for (const [token, replacement] of Object.entries(config.replacements)) {
-    if (!token.startsWith('__') || !token.endsWith('__')) {
-      errors.push(`Invalid replacement token format: ${token}. Must be wrapped in __TOKEN__`);
-    }
-    if (typeof replacement !== 'string') {
-      errors.push(`Invalid replacement value for ${token}: must be a string`);
-    }
-  }
-  return errors;
-}
-
 async function validateFullConfig(
   config: any,
   configPath: string,
@@ -97,10 +80,6 @@ async function validateFullConfig(
     if (!validateConfig(config)) {
       return { isValid: false, errors: ['Invalid configuration format'] };
     }
-
-    const replacementErrors = validateReplacements(config);
-    errors.push(...replacementErrors);
-
     const templateErrors = await validateTemplates(
       config,
       path.join(path.dirname(configPath), config.templatesDir),

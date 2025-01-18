@@ -32,7 +32,6 @@ export const createWithDefaultFiles = async (uri: vscode.Uri) => {
       uri.fsPath,
       config.defaultTemplateGroup,
       templatesPath,
-      config.replacements,
     );
     vscode.window.showInformationMessage(`Component ${componentName} created successfully!`);
   } catch (error) {

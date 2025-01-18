@@ -42,7 +42,7 @@ export async function addFiles(uri: vscode.Uri) {
       ...config.defaultTemplateGroup.map((template) => ({
         label: template.label,
         template: template,
-        description: path.basename(template.target.replaceAll('{{componentName}}', componentName)),
+        description: path.basename(template.target.replaceAll('{{COMPONENT_NAME}}', componentName)),
       })),
     );
   }
@@ -60,7 +60,7 @@ export async function addFiles(uri: vscode.Uri) {
           label: template.label,
           template: template,
           description: path.basename(
-            template.target.replaceAll('{{componentName}}', componentName),
+            template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
           ),
         })),
       );
@@ -99,7 +99,6 @@ export async function addFiles(uri: vscode.Uri) {
       path.dirname(uri.fsPath),
       selectedTemplates,
       templatesPath,
-      config.replacements,
     );
 
     if (result.existingFiles.length > 0) {
