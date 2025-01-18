@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findConfig, validateComponentName } from '../configurationUtils';
-import { generateFromTemplates } from '../generationUtils';
+import { findConfig, validateComponentName } from '../utils/configurationUtils';
+import { generateFromTemplates } from '../utils/generationUtils';
 
 export async function createAltComponent(uri: vscode.Uri) {
   if (!uri || !uri.fsPath) {

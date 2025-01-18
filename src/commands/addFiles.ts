@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findConfig, TemplateItem, validateComponentName } from '../configurationUtils';
-import { generateFromTemplates } from '../generationUtils';
+import { findConfig, TemplateItem, validateComponentName } from '../utils/configurationUtils';
+import { generateFromTemplates } from '../utils/generationUtils';
 
 interface QuickPickTemplateItem extends vscode.QuickPickItem {
   template: TemplateItem;

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { findConfig, validateComponentName } from '../configurationUtils';
+import { findConfig, validateComponentName } from '../utils/configurationUtils';
 
 interface RenameOptions {
   oldName: string;
