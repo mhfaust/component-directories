@@ -21,7 +21,7 @@ export async function addFiles(uri: vscode.Uri) {
   const { config, configDir } = configResult;
 
   const componentName = path.basename(uri.fsPath);
-  const validationError = validateComponentName(componentName, config.componentNamePattern);
+  const validationError = validateComponentName(componentName);
   if (validationError) {
     vscode.window.showErrorMessage(
       `Invalid component directory name: ${componentName}. ${validationError}`,
@@ -51,9 +51,9 @@ export async function addFiles(uri: vscode.Uri) {
         return {
           label: template.label,
           templateSource: source,
-          description: path.basename(
-            template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
-          ),
+          // We'll let the generation utils handle the case transformations
+          description:
+            template.target.includes('{{') ? `(Will match component name case)` : template.target,
         };
       }),
     );
@@ -76,9 +76,8 @@ export async function addFiles(uri: vscode.Uri) {
           return {
             label: template.label,
             templateSource: source,
-            description: path.basename(
-              template.target.replaceAll('{{COMPONENT_NAME}}', componentName),
-            ),
+            description:
+              template.target.includes('{{') ? `(Will match component name case)` : template.target,
           };
         }),
       );
@@ -109,7 +108,7 @@ export async function addFiles(uri: vscode.Uri) {
     )
     .map((item) => item.templateSource);
 
-  const templatesPath = path.join(configDir, config.templatesDir);
+  const templatesPath = path.join(configDir, config.templatesDirectory);
 
   try {
     const result = await generateFromTemplates(

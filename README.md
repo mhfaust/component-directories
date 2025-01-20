@@ -1,14 +1,15 @@
 # Component Directories
 
-A Visual Studio Code extension that streamlines component creation and management through customizable templates. Framework-agnostic - use it with any component-based project structure!
+A VS Code extension for generating and managing component directories. While designed with React components in mind, it's framework-agnostic and can be used for any project that follows a component-based architecture.
 
 ## Features
 
-- **Framework Agnostic**: Create components for any framework or library using customizable templates
-- **Template-Based, Configurable Sets**: Generate components using predefined sets of templates, configured via JSON
-- **Hierarchical Configuration**: Define different template Groups for different parts of your project using directory-specific JSON configurations
-- **Component Management**: Rename components and add new files to existing components
-- **Smart Import Updates**: Automatically updates import statements when renaming components (for TypeScript/JavaScript projects)
+- Create component directories with multiple files from templates
+- Add additional files to existing components
+- Rename components (including updating imports)
+- Support for multiple template groups
+- Smart case transformations for component names
+- Framework agnostic
 
 ## Quick Start
 
@@ -26,114 +27,200 @@ A Visual Studio Code extension that streamlines component creation and managemen
 
 ## Configuration
 
-### Template Directory Structure
+Create a `.component-templates.json` file in your project root or any parent directory of where you'll be creating components.
 
-The extension requires a specific structure for your template files:
-
-```
-your-project/
-├── .component-templates.json
-├── component-templates/        # Must be a sibling to the config file; configurable name is specified in .component-templates.json
-│   ├── component.tsx.template  # (or whatever main file your project-type requires)
-│   ├── index.ts.template       # (e.g., if you want to have default exports from the component directory)
-│   └── ... other templates
-└── ... other project files
-```
-
-- The template directory must be a direct sibling to your `.component-templates.json` file
-- The `templatesDir` setting in your config must be a simple directory name without any path info
-  - ✅ Correct: `"templatesDir": "component-templates"`
-  - ❌ Incorrect: `"templatesDir": "./templates"` or `"templatesDir": "path/to/templates"`
-
-### Configuration File
-
-The extension uses `.component-templates.json` files for configuration. These can be placed at any level in your project hierarchy - the extension will look for the nearest configuration file in the current or any parent directory. This allows you to:
-
-- Use different component templates for different parts of your project
-- Override project-wide templates with sub-directory specific ones
-- Maintain separate component structures for different modules or packages
-
-Create a `.component-templates.json` file in any directory where you want to define component templates:
+### Basic Configuration Example
 
 ```json
 {
-  "templatesDir": "component-templates",
-  "componentNamePattern": "^[A-Z][a-zA-Z0-9]*$",
-  "defaultTemplateGroup": [
+  "templatesDirectory": "component-templates",
+  "directoryCase": "pascal",
+  "defaultTemplateGroup": ["component.tsx.template", "index.ts.template", "styles.scss.template"],
+  "templates": [
     {
       "source": "component.tsx.template",
-      "target": "{{COMPONENT_NAME}}.tsx",
+      "target": "{{PascalCaseComponentName}}.tsx",
       "label": "Component"
     },
     {
-      "source": "index.template",
+      "source": "index.ts.template",
       "target": "index.ts",
       "label": "Index"
+    },
+    {
+      "source": "styles.scss.template",
+      "target": "{{PascalCaseComponentName}}.module.scss",
+      "label": "Styles"
     }
+  ]
+}
+```
+
+### Configuration Properties
+
+- `templatesDirectory`: Directory containing template files (relative to config file location)
+- `directoryCase` (optional): Specifies the case format for component directories. Can be one of: "pascal", "camel", "kebab", or "snake"
+- `defaultTemplateGroup`: Array of template sources to use for the default "Create..." command
+- `alternateTemplateGroups` (optional): Array of named template groups for the "Create (choose file set)..." command
+- `templates`: Array of template configurations with the following properties:
+  - `source`: Template file name in the templates directory
+  - `target`: Output file name (can include case-sensitive tokens)
+  - `label`: Display name for the template in the UI
+
+### Case Transformation Tokens
+
+You can use these tokens in template files and target filenames for automatic case transformation:
+
+- `{{PascalCaseComponentName}}` → MyComponent
+- `{{camelCaseComponentName}}` → myComponent
+- `{{kebab-case-component-name}}` → my-component
+- `{{snake_case_component_name}}` → my_component
+
+### Advanced Configuration Example
+
+```json
+{
+  "templatesDirectory": "component-templates",
+  "directoryCase": "pascal",
+  "defaultTemplateGroup": [
+    "component.tsx.template",
+    "index.ts.template",
+    "styles.scss.template",
+    "test.tsx.template"
   ],
   "alternateTemplateGroups": [
     {
       "label": "Simple Component",
+      "templates": ["component-simple.tsx.template", "index.ts.template"]
+    },
+    {
+      "label": "Full Feature Set",
       "templates": [
-        {
-          "source": "simple.template",
-          "target": "{{COMPONENT_NAME}}.tsx",
-          "label": "Simple Component"
-        }
+        "component.tsx.template",
+        "index.ts.template",
+        "styles.scss.template",
+        "test.tsx.template",
+        "types.ts.template"
       ]
     }
-  ]
-}
-```
-
-### Configuration Options
-
-| Option                      | Required | Description                                              |
-| --------------------------- | -------- | -------------------------------------------------------- |
-| `templatesDir`              | Yes      | Name of the directory containing template files          |
-| `componentNamePattern`      | Yes      | Regular expression that component names must match       |
-| `componentNamePatternLabel` | No       | Human-readable description of the naming pattern         |
-| `defaultTemplateGroup`      | Yes      | Array of template sources to use by default              |
-| `alternateTemplateGroups`   | No       | Additional template groups for different component types |
-| `templates`                 | Yes      | Array of template definitions                            |
-
-For example, to support Vue.js components using kebab-case:
-
-```json
-{
-  "templatesDir": "component-templates",
-  "componentNamePattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
-  "componentNamePatternLabel": "kebab-case",
-  ...
-}
-```
-
-## Commands
-
-Right-click in the explorer to access these commands under the "Component" menu:
-
-- **Create (Full)**: Generate a component using all main templates
-- **Create (Choose Type)...**: Create a component selecting from alternate template groups
-- **Rename**: Rename a component and update its imports throughout the project (TypeScript/JavaScript projects only)
-- **Add Files...**: Add additional template-based files to an existing component
-
-## Template Usage
-
-The `{{COMPONENT_NAME}}` token is used both in template file paths and template content:
-
-In `.component-templates.json`:
-
-```json
-{
-  "defaultTemplateGroup": [
+  ],
+  "templates": [
     {
       "source": "component.tsx.template",
-      "target": "{{COMPONENT_NAME}}.tsx",
+      "target": "{{PascalCaseComponentName}}.tsx",
       "label": "Component"
+    },
+    {
+      "source": "component-simple.tsx.template",
+      "target": "{{PascalCaseComponentName}}.tsx",
+      "label": "Simple Component"
+    },
+    {
+      "source": "index.ts.template",
+      "target": "index.ts",
+      "label": "Index"
+    },
+    {
+      "source": "styles.scss.template",
+      "target": "{{PascalCaseComponentName}}.module.scss",
+      "label": "Styles"
+    },
+    {
+      "source": "test.tsx.template",
+      "target": "{{PascalCaseComponentName}}.test.tsx",
+      "label": "Test"
+    },
+    {
+      "source": "types.ts.template",
+      "target": "types.ts",
+      "label": "Types"
     }
   ]
 }
 ```
+
+## Template Examples
+
+### Component Template (component.tsx.template)
+
+```tsx
+import styles from './{{PascalCaseComponentName}}.module.scss';
+
+type {{PascalCaseComponentName}}Props = {};
+
+const {{PascalCaseComponentName}} = ({}: {{PascalCaseComponentName}}Props) => {
+  return <div className={styles.{{camelCaseComponentName}}}></div>;
+};
+
+export default {{PascalCaseComponentName}};
+```
+
+### Style Template (styles.scss.template)
+
+```scss
+.{{camelCaseComponentName}} {
+
+}
+```
+
+### Index Template (index.ts.template)
+
+```ts
+export { default } from './{{PascalCaseComponentName}}';
+```
+
+### Test Template (test.tsx.template)
+
+```tsx
+import { render } from '@testing-library/react';
+import {{PascalCaseComponentName}} from './{{PascalCaseComponentName}}';
+
+describe('{{PascalCaseComponentName}}', () => {
+  it('renders without crashing', () => {
+    render(<{{PascalCaseComponentName}} />);
+  });
+});
+```
+
+## Usage
+
+### Commands
+
+Right-click in the file explorer to access these commands:
+
+1. **Create...**
+
+   - Creates a new component using the default template group
+   - Component name can be in PascalCase, camelCase, kebab-case, or snake_case
+
+2. **Create (choose file set)...**
+
+   - Creates a new component after selecting from available template groups
+   - Shows template groups defined in `alternateTemplateGroups`
+
+3. **Add Files...**
+
+   - Adds additional files to an existing component
+   - Shows available templates from all groups
+
+4. **Rename...**
+   - Renames a component directory and all its files
+   - Updates imports across the workspace
+   - Preserves case variations in files and content
+
+### Component Name Formats
+
+Component names can be provided in any of these formats:
+
+- PascalCase: `MyComponent`
+- camelCase: `myComponent`
+- kebab-case: `my-component`
+- snake_case: `my_component`
+
+The extension will automatically transform the name to the appropriate case based on:
+
+- The `directoryCase` setting for the component directory
+- The token used in template files and target file names
 
 ## Development
 

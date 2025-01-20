@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { findConfig, validateComponentName } from '../utils/configurationUtils';
+import { transform, detectCase, CaseType } from '../utils/caseUtils';
 
 interface RenameOptions {
   oldName: string;
@@ -11,8 +12,15 @@ interface RenameOptions {
 
 async function updateImportReferences(oldName: string, newName: string) {
   const workspaceEdit = new vscode.WorkspaceEdit();
-
   const files = await vscode.workspace.findFiles('**/*.{ts,tsx}', '**/node_modules/**');
+
+  // Detect the case types of the old and new names
+  const oldCase = detectCase(oldName);
+  const newCase = detectCase(newName);
+
+  if (!oldCase || !newCase) {
+    throw new Error('Invalid component name format');
+  }
 
   for (const file of files) {
     const document = await vscode.workspace.openTextDocument(file);
@@ -92,8 +100,22 @@ async function renameComponent({ oldName, newName, directory }: RenameOptions) {
   for (const file of newFiles) {
     const filePath = path.join(newPath, file);
     const content = await fs.readFile(filePath, 'utf-8');
-    const updatedContent = content.replaceAll(oldName, newName);
-    await fs.writeFile(filePath, updatedContent);
+
+    // Replace all case variants of the old name with corresponding case variants of the new name
+    const processedContent = (['pascal', 'camel', 'kebab', 'snake'] as CaseType[]).reduce(
+      (acc, caseType) => {
+        const oldVariant = transform(oldName, caseType);
+        const newVariant = transform(newName, caseType);
+
+        if (oldVariant && newVariant) {
+          return acc.replaceAll(oldVariant, newVariant);
+        }
+        return acc;
+      },
+      content,
+    );
+
+    await fs.writeFile(filePath, processedContent);
   }
 }
 
@@ -107,14 +129,13 @@ export const renameCommand = async (uri: vscode.Uri) => {
   if (!configResult) {
     return;
   }
-  const { config } = configResult;
 
   const currentName = path.basename(uri.fsPath);
   const newName = await vscode.window.showInputBox({
-    prompt: 'New component name in PascalCase',
-    placeHolder: 'e.g. NewComponentName',
+    prompt: 'New component name',
+    placeHolder: 'e.g., MyComponent, myComponent, my-component, or my_component',
     value: currentName,
-    validateInput: (value) => validateComponentName(value, config.componentNamePattern),
+    validateInput: validateComponentName,
   });
 
   if (!newName || newName === currentName) {

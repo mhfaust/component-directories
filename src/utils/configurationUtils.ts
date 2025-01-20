@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { CaseType, isValidCase } from './caseUtils';
 
 export type TemplateItem = {
   source: string;
@@ -13,52 +14,41 @@ export type TemplateGroup = {
   templates: string[];
 };
 
-type TemplateConfig = {
-  templatesDir: string;
-  componentNamePattern: string;
-  componentNamePatternLabel?: string;
+export type TemplateConfig = {
+  templatesDirectory: string;
+  directoryCase?: CaseType;
   templates: TemplateItem[];
   defaultTemplateGroup: string[];
   alternateTemplateGroups?: TemplateGroup[];
 };
 
-export function getComponentNamePrompt(config: TemplateConfig): string {
-  if (config.componentNamePatternLabel) {
-    return `Component name (${config.componentNamePatternLabel})`;
-  }
-  return 'Component name';
+export function getComponentNamePrompt(): string {
+  return 'Component name (PascalCase, camelCase, kebab-case, or snake_case)';
 }
 
-export function validateComponentName(name: string, pattern: string): string | null {
-  if (!new RegExp(pattern).test(name)) {
-    return `Component name must match pattern: ${pattern}`;
+export function validateComponentName(name: string): string | null {
+  if (!isValidCase(name)) {
+    return 'Component name must be in a valid case format (PascalCase, camelCase, kebab-case, or snake_case)';
   }
   return null;
 }
 
 function validateConfig(config: any): config is TemplateConfig {
-  if (!config.templatesDir || typeof config.templatesDir !== 'string') {
-    throw new Error('Missing or invalid templatesDir configuration');
+  if (!config.templatesDirectory || typeof config.templatesDirectory !== 'string') {
+    throw new Error('Missing or invalid templatesDirectory configuration');
   }
 
-  if (config.templatesDir.includes('/') || config.templatesDir.includes('\\')) {
+  if (config.templatesDirectory.includes('/') || config.templatesDirectory.includes('\\')) {
     throw new Error(
-      'templatesDir must be a directory name without any path segments (e.g. "component-templates" not "./templates" or "path/to/templates")',
+      'templatesDirectory must be a directory name without any path segments (e.g. "component-templates" not "./templates" or "path/to/templates")',
     );
   }
 
-  if (!config.componentNamePattern || typeof config.componentNamePattern !== 'string') {
-    throw new Error('Missing or invalid componentNamePattern configuration');
-  }
-
-  try {
-    new RegExp(config.componentNamePattern);
-  } catch (e) {
-    throw new Error('Invalid componentNamePattern regex: ' + (e as Error).message);
-  }
-
-  if (config.componentNamePatternLabel && typeof config.componentNamePatternLabel !== 'string') {
-    throw new Error('componentNamePatternLabel must be a string if provided');
+  if (config.directoryCase !== undefined) {
+    const validCases: CaseType[] = ['pascal', 'camel', 'kebab', 'snake'];
+    if (!validCases.includes(config.directoryCase)) {
+      throw new Error('directoryCase must be one of: "pascal", "camel", "kebab", or "snake"');
+    }
   }
 
   if (!Array.isArray(config.templates)) {
@@ -130,7 +120,7 @@ async function validateFullConfig(
     }
     const templateErrors = await validateTemplates(
       config,
-      path.join(path.dirname(configPath), config.templatesDir),
+      path.join(path.dirname(configPath), config.templatesDirectory),
     );
     errors.push(...templateErrors);
 

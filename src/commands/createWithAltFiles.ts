@@ -41,16 +41,16 @@ export async function createAltComponent(uri: vscode.Uri) {
   }
 
   const componentName = await vscode.window.showInputBox({
-    prompt: getComponentNamePrompt(config),
-    placeHolder: 'e.g. MyComponent',
-    validateInput: (value) => validateComponentName(value, config.componentNamePattern),
+    prompt: getComponentNamePrompt(),
+    placeHolder: 'e.g., MyComponent, myComponent, my-component, or my_component',
+    validateInput: validateComponentName,
   });
 
   if (!componentName) {
     return;
   }
 
-  const templatesPath = path.join(configDir, config.templatesDir);
+  const templatesPath = path.join(configDir, config.templatesDirectory);
 
   try {
     await generateFromTemplates(

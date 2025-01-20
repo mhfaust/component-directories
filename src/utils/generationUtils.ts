@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { TemplateItem } from './configurationUtils';
+import { transform, CaseType, detectCase } from './caseUtils';
 
 interface GenerationResult {
   success: boolean;
@@ -8,14 +9,50 @@ interface GenerationResult {
   addedFiles: string[];
 }
 
+interface CaseTransformPattern {
+  token: string;
+  targetCase: CaseType;
+}
+
+// Common case transform patterns
+const TOKEN_TRANSFORMS: CaseTransformPattern[] = [
+  { token: '{{PascalCaseComponentName}}', targetCase: 'pascal' },
+  { token: '{{snake_case_component_name}}', targetCase: 'snake' },
+  { token: '{{kebab-case-component-name}}', targetCase: 'kebab' },
+  { token: '{{camelCaseComponentName}}', targetCase: 'camel' },
+];
+
+function processTokens(input: string, componentName: string): string {
+  let result = input;
+
+  // Process each token type
+  for (const { token, targetCase } of TOKEN_TRANSFORMS) {
+    if (result.includes(token)) {
+      const transformed = transform(componentName, targetCase);
+      if (transformed) {
+        result = result.replaceAll(token, transformed);
+      }
+    }
+  }
+
+  return result;
+}
+
 export async function generateSingleFile(
   componentName: string,
-  targetDir: string,
+  targetDirectory: string,
   template: TemplateItem,
   templatesPath: string,
 ): Promise<{ success: boolean; path: string; exists: boolean }> {
-  const processedTarget = template.target.replaceAll('{{COMPONENT_NAME}}', componentName);
-  const componentDir = path.join(targetDir, componentName);
+  // First detect the input case - if invalid, this will return null
+  const sourceCase = detectCase(componentName);
+  if (!sourceCase) {
+    throw new Error(`Invalid component name format: ${componentName}`);
+  }
+
+  // Process the target filename with case transformations
+  const processedTarget = processTokens(template.target, componentName);
+  const componentDir = path.join(targetDirectory, componentName);
   const targetPath = path.join(componentDir, processedTarget);
 
   try {
@@ -27,7 +64,7 @@ export async function generateSingleFile(
 
   try {
     const templateContent = await fs.readFile(path.join(templatesPath, template.source), 'utf-8');
-    const processedContent = templateContent.replaceAll('{{COMPONENT_NAME}}', componentName);
+    const processedContent = processTokens(templateContent, componentName);
 
     await fs.mkdir(componentDir, { recursive: true });
     await fs.writeFile(targetPath, processedContent);
@@ -47,7 +84,7 @@ function findTemplateItem(templateSource: string, templates: TemplateItem[]): Te
 
 export async function generateFromTemplates(
   componentName: string,
-  targetDir: string,
+  targetDirectory: string,
   templateSources: string[],
   templateItems: TemplateItem[],
   templatesPath: string,
@@ -56,7 +93,7 @@ export async function generateFromTemplates(
 
   const results = await Promise.all(
     templates.map((template) =>
-      generateSingleFile(componentName, targetDir, template, templatesPath),
+      generateSingleFile(componentName, targetDirectory, template, templatesPath),
     ),
   );
 

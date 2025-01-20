@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {
   findConfig,
-  validateComponentName,
   getComponentNamePrompt,
+  validateComponentName,
 } from '../utils/configurationUtils';
 import { generateFromTemplates } from '../utils/generationUtils';
 
@@ -18,12 +18,12 @@ export const createWithDefaultFiles = async (uri: vscode.Uri) => {
     return;
   }
   const { config, configDir } = configResult;
-  const templatesPath = path.join(configDir, config.templatesDir);
+  const templatesPath = path.join(configDir, config.templatesDirectory);
 
   const componentName = await vscode.window.showInputBox({
-    prompt: getComponentNamePrompt(config),
-    placeHolder: 'e.g. MyComponent',
-    validateInput: (value) => validateComponentName(value, config.componentNamePattern),
+    prompt: getComponentNamePrompt(),
+    placeHolder: 'e.g., MyComponent, myComponent, my-component, or my_component',
+    validateInput: validateComponentName,
   });
 
   if (!componentName) {
