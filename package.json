@@ -1,9 +1,9 @@
 {
   "name": "component-directories",
-  "displayName": "Component Directories",
+  "displayName": "Component Manager",
   "description": "Generate and and rename components as files grouped by a directory. Language and framework agnostic",
   "icon": "icon-multifile.png",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -35,31 +35,32 @@
   },
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "package": "vsce package",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test",
-    "package": "vsce package"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
+    "@types/jest": "^29.5.14",
     "@types/node": "20.x",
     "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.16.0",
+    "jest": "^29.7.0",
     "prettier": "^3.4.2",
+    "ts-jest": "^29.2.6",
     "typescript": "^5.7.2"
   },
   "activationEvents": [
     "onCommand:extension.createDefault",
     "onCommand:extension.createAltComponent",
     "onCommand:extension.renameComponent",
-    "onCommand:extension.addComponentFiles"
+    "onCommand:extension.addComponentFiles",
+    "onCommand:extension.forkComponent"
   ],
   "contributes": {
     "commands": [
@@ -78,6 +79,10 @@
       {
         "command": "extension.addComponentFiles",
         "title": "Add Files..."
+      },
+      {
+        "command": "extension.forkComponent",
+        "title": "Fork..."
       }
     ],
     "menus": {
@@ -104,6 +109,10 @@
         {
           "command": "extension.renameComponent",
           "group": "2_modify@2"
+        },
+        {
+          "command": "extension.forkComponent",
+          "group": "2_modify@3"
         }
       ]
     },

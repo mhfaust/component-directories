@@ -1,19 +1,19 @@
-# Component Directories
+# Component Manager
 
-A VS Code extension for generating and managing component directories. While designed with React components in mind, it's framework-agnostic and can be used for any project that follows a component-based architecture.
+A VS Code extension for generating and managing component files. While designed with React components in mind, it's framework-agnostic and can be used for any project that follows a component-based architecture.
 
 ## Features
 
-- Create component directories with multiple files from templates
-- Add additional files to existing components
-- Rename components (including updating imports)
-- Support for multiple template groups
-- Smart case transformations for component names
-- Framework agnostic
+- Create components with multiple files from templates
+- Add files to existing components
+- Rename components and imports to them
+- Fork component with deep renaming
+- Supports defining and slecting from multiple template groups
+- Smart case transforms for internal references to component names
 
 ## Quick Start
 
-1. Install from VS Code marketplace: search for "Component Directories"
+1. Install from VS Code marketplace: search for "Component Manager"
 2. Create `.component-templates.json` in your project root
 3. Create a directory next to your config file to store your templates (e.g., "component-templates")
 4. Right-click any folder in VS Code's explorer and select "Component > Create..."

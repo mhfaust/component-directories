@@ -5,7 +5,21 @@ All notable changes to the "Component Directories" extension will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-01-17
+## [0.1.0] - 2025-03-23
+
+### Added
+
+- New "Fork..." command to create copies of existing components with deep renaming
+- Unit tests for all commands
+- Renamed extension display name to "Component Manager"
+
+### Changed
+
+- Improved error handling and user feedback for all operations
+- Updated dependencies to latest versions
+- Enhanced documentation with fork command usage examples
+
+## [0.0.3] - 2025-01-17
 
 ### Added
 

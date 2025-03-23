@@ -27,7 +27,7 @@ function tokenize(input: string, caseType: CaseType): WordTokens {
   switch (caseType) {
     case 'pascal':
     case 'camel':
-      // Split on capital letters, preserve acronyms
+      // Split on capital letters and digit boundaries, preserve acronyms
       return {
         words: input
           .split(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/)
@@ -63,11 +63,31 @@ function transformTokens(tokens: WordTokens, targetCase: CaseType): string {
           .join('')
       );
 
-    case 'kebab':
-      return words.join('-');
+    case 'kebab': {
+      // For kebab case, we need to handle digit boundaries
+      const result: string[] = [];
 
-    case 'snake':
-      return words.join('_');
+      words.forEach((word) => {
+        // Further split on digit boundaries for kebab-case
+        const parts = word.split(/(?<=[a-zA-Z])(?=\d)/);
+        result.push(...parts);
+      });
+
+      return result.join('-');
+    }
+
+    case 'snake': {
+      // For snake case, also handle digit boundaries
+      const result: string[] = [];
+
+      words.forEach((word) => {
+        // Further split on digit boundaries for snake_case
+        const parts = word.split(/(?<=[a-zA-Z])(?=\d)/);
+        result.push(...parts);
+      });
+
+      return result.join('_');
+    }
   }
 }
 

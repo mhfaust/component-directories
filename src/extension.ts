@@ -3,6 +3,7 @@ import { renameCommand } from './commands/rename';
 import { createWithDefaultFiles } from './commands/createWithDefaultFiles';
 import { addFiles } from './commands/addFiles';
 import { createAltComponent } from './commands/createWithAltFiles';
+import { forkComponentCommand } from './commands/forkComponent';
 
 export function activate(context: vscode.ExtensionContext) {
   const createAltComponentDisposable = vscode.commands.registerCommand(
@@ -25,8 +26,14 @@ export function activate(context: vscode.ExtensionContext) {
     renameCommand,
   );
 
+  const forkComponentDisposable = vscode.commands.registerCommand(
+    'extension.forkComponent',
+    forkComponentCommand,
+  );
+
   context.subscriptions.push(createDefaultDisposable);
   context.subscriptions.push(renameDisposable);
   context.subscriptions.push(createAltComponentDisposable);
   context.subscriptions.push(addFilesDisposable);
+  context.subscriptions.push(forkComponentDisposable);
 }
